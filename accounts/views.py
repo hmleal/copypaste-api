@@ -1,7 +1,7 @@
 import json
 
-from .models import Account
-from .serializers import AccountSerializer
+from .models import Account, Message
+from .serializers import AccountSerializer, MessageSerializer
 
 from django.http import Http404
 
@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 class AccountList(mixins.ListModelMixin,
                   mixins.CreateModelMixin,
                   generics.GenericAPIView):
-    queryset = Account.objects.all()
+    queryset = Account.objects.filter(is_active=True)
     serializer_class = AccountSerializer
 
     def get(self, request, *args, **kwargs):
@@ -23,6 +23,22 @@ class AccountList(mixins.ListModelMixin,
 
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        # TODO da pra melhorar
+        content = json.loads(request.body.decode('UTF-8'))
+
+        account = self._get_object(content['email'])
+        account.is_active = False
+        account.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def _get_object(self, email):
+        try:
+            return Account.objects.get(email=email)
+        except Account.DoesNotExist:
+            raise Http404
 
 
 class AccountDetail(mixins.RetrieveModelMixin,
@@ -38,16 +54,39 @@ class AccountDetail(mixins.RetrieveModelMixin,
         return self.update(request, *args, **kwargs)
 
 
-class AccountDelete(APIView):
-    def get_object(self, email):
+class MessageList(mixins.ListModelMixin,
+                  mixins.CreateModelMixin,
+                  generics.GenericAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        origin = self._get_object(request.data['origin'])
+        destination = self._get_object(request.data['destination'])
+
+        request.data['origin'] = origin.pk
+        request.data['destination'] = destination.pk
+
+        return self.create(request, *args, **kwargs)
+
+    def _get_object(self, email):
         try:
             return Account.objects.get(email=email)
         except Account.DoesNotExist:
             raise Http404
 
-    def delete(self, request, *args, **kwargs):
-        content = json.loads(request.body.decode('UTF-8'))
-        account = self.get_object(content['email'])
-        account.delete()
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+class MessageDetail(mixins.RetrieveModelMixin,
+                    mixins.UpdateModelMixin,
+                    generics.GenericAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)

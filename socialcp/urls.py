@@ -23,6 +23,6 @@ from accounts import views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/accounts/$', views.AccountList.as_view()),
-    url(r'^api/accounts/delete/$', views.AccountDelete.as_view()),
+    url(r'^api/messages/$', views.MessageList.as_view()),
     #url(r'^api/', include('rest_framework.urls', namespace='rest_framework')),
 ]
