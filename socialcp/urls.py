@@ -16,25 +16,13 @@ Including another URLconf
 from django.conf.urls import url, include
 from django.contrib import admin
 from accounts import models
-from rest_framework import routers, serializers, viewsets
 
-class AccountSerializer(serializers.HyperlinkedModelSerializer):
-    class Meta:
-        model = models.Account
-        fields = ('email',)
-
-
-class AccountViewSet(viewsets.ModelViewSet):
-    queryset = models.Account.objects.all()
-    serializer_class = AccountSerializer
-
-
-router = routers.DefaultRouter()
-router.register(r'accounts', AccountViewSet)
+from accounts import views
 
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^api/', include(router.urls)),
-    url(r'^api/', include('rest_framework.urls', namespace='rest_framework')),
+    url(r'^api/accounts/$', views.AccountList.as_view()),
+    url(r'^api/accounts/delete/$', views.AccountDelete.as_view()),
+    #url(r'^api/', include('rest_framework.urls', namespace='rest_framework')),
 ]
